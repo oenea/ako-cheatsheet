@@ -1,0 +1,25 @@
+Patterson D.A., Hennessy J.L. : Computer
+Organization and Design, 5th Edition, 2014,
+wyd. Morgan Kaufmann.
+
+Hennessy J.L., Patterson D.A.: Computer
+Architecture, 5th Edition, 2012, Morgan
+Kaufmann.
+
+Chalk B.S.: Organizacja i architektura komputerów.
+Warszawa WNT 1998
+
+Abel P.: Asembler IBM PC programowanie, wyd. RM
+2004.
+
+Lewis D.: Między asemblerem a językiem C, wyd. RM
+
+Metzger P.: Anatomia PC. Wyd. Helion 2007
+
+Petzold C.: Kod. Ukryty język sprzętu komputerowego i
+oprogramowania. Wyd. Helion 2002.
+
+Biernat J.: Architektura komputerów. Wrocław 2013.
+Oficyna Wydawnicza Politechniki Wrocławskiej.
+
+

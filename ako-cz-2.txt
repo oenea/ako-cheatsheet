@@ -1,0 +1,1501 @@
+struktura programu w asemblerze
+
+.686            ; naglowek programu, dyrektyw
+.model flat     ; dyrektywa nieuzywana w trybie 64-bitowym
+.data?          ; poczatek danych (niezainicjalizowanych)
+                ; opisy danych niezainizalizowanych
+
+.data           ; poczatek danych (zainicjalizowanych)
+                ; opisy danych zainicjalizowanych
+
+.code           
+                ; rozkazy (instrukcje) programu
+
+END             ; kazdy program musi byc tym zakonczony
+
+koniec strukturyt programu w asemblerze
+
+W programie asemblerowym niektore obszary pamieci opatrywane sa nazwami
+- jezeli nazwa odnosi sie do obszaru zawierajacego instrukcje (rozkaz)
+  programu, to nazwa taka stanowi "etykiete"
+- jezeli obszar zamiera zmienna (dana), to nazwa obszaru stanowi nazwe "zmiennej"
+
+Nazwe w sensie asemblera tworzy ciag liter, cyfr i znakow 
+? (znak zapytania),
+@ (symbol at),
+_ (znak podkreslenia),
+$ (znak dolara),
+nazwa nie moze zaczynac sie od cyfry. 
+
+Etykiete, wraz ze znakiem ":" (dwukropka), umiesza sie przed rozkazem, 
+np. powtorz:    mov     dl, [ecx]
+Taka konstrukcja oznacza, ze obszar kilku bajtow pamieci, w ktorych
+przechowywany jest kod podanego rozkazu ma swoja unikatowa nazwe, czyli "etykiete"
+
+Zmienne w programie deklaruje sie za pomoca dyrektyw
+DB - bajt (8bit)
+DW - word (16bit)
+DD - doubleword (32bit)
+DQ - quadword (64bit) 
+
+Po lewej stronie dyrektywy podaje sie nazwe zmiennej, po prawej jej wartosc 
+poczatkowa.
+
+przykladowa_zmienna     DD -734254
+
+W jedym wierszu mozna podac wiele wartosci (dodanie litery H lub h, 
+da informacje asemblerowi, ze jest to liczba zapisana w systemie szesnastkowym)
+
+alfa    DW  234H, 2342H, 233H
+
+Powyzszy wiersz mozna interpretowac jako deklaracje tablicy zawierajacej trzy 
+liczby 16-bitowe. 
+
+W zapisie szesnastkowym konieczne jest wprowadzenie dodatkowego zera z lewej
+strony jezeli pierwsza cyfra liczby zapisana jest litera (A, B, C, D, E, F), 
+np. zamiast F3H, nalezy napisac 0F3H. 
+
+Jezeli tablica zawiera identyczne elementy, stosuje sie operator powtarzania
+DUP
+
+wyniki  DB  512 dup(-1)
+
+Powyzsza instrukcja wypelni 512 elementow o rozmiarze DB (8bit) wartoscia -1.
+
+Liczby dziesietne poprzedzone znakiem "+" lub bez znaku zamieniane sa na liczby
+w naturalnym kodzie binarnym.
+Liczby dziesietne poprzedzone znakiem "-" zamieniane sa na liczby w kodzie U2.
+
+Z tego wynika, ze wieksze
+DB      -128
+DB      +128
+generuja takie same kody binarne 10000000
+
+Znak zapytania (?) w polu argumentu oznacza, ze wartosc poczatkowa zmiennej jest
+nieokreslona/niezaincjalizowana.
+
+nieokreslona_zmienna    DQ      ?
+
+Liczby z kropka oddzielaca czesc ulamkowa moga wystepowac jako operandy dyrektyw
+DD, DQ, DT - liczby takie sa przeksztalcane na postac zmiennoprzecinkowa binarna,
+np. 
+c_Eulera    DT     0.577215     ; stala Eulera
+
+fld     c_Eulera                ; zaladowanie stalej Eulera na stos koprocesora
+
+Deklaracje stalych umozliwiaja przypisanie nazw symbolicznych do okreslonych 
+wartosci, np. 
+
+num1    EQU     18H     ; wartosc max
+
+Typowe rozkazy procesora maja jeden lub dwa argumenty, np. rozkaz przeslania
+
+MOV     EDI,    pomiar
+
+powoduje wpisanie do rejestru EDI zawartosc zmiennej pomiar.
+
+Operandy rozkazow maja postac wyrazen roznych typow: sa to czesto rejestry, 
+liczby, ciagi znakow, wyrazenia opisujace polozenie lokacji pamieci i 
+wyrazenia adresowe.
+
+W asemblerze przyjeto, ze nazwa zmiennej wystepujaca w polu operandu (podobnie
+jak nazwa rejestru) oznacza, ze dzialanie ma byc wykonane na zawartosci tej 
+zmiennej.
+
+W trakcje asemblacji nazwie kazdej zmiennej przypisywana jest wartosc rowna 
+odleglosci pierwszego bajtu tej zmiennej (liczonej w bajtach) od poczatku 
+obszaru danych. 
+Warto dodac, ze omawiana wartosc nie jest wartoscia zmiennej, ale jest 
+przypisywana nazwie zmiennej i okresla polozenie zmiennej w pamieci.
+
+Jezeli intrukcja wymaga podania dwoch operandow, to prawie zawsze musza byc 
+one o jednakowym rozmiarze, np.
+
+SUB     ECX,    EDI     ; obliczenie ECX <- ECX - EDI
+ADD     EAX,    DX      ; blad, dodawanie rejestru 16bit do 32bit
+
+Wyjatkowo, jezeli jeden z operandow znajduje sie w pamieci, to mozliwa jest 
+dorazna zmiana rozmiaru (typu) zmiennej za pomoca operatora PTR, np. 
+
+block_sys        DD      ?   ; zmienna 32-bitowa
+
+MOV     CX,     word    PTR     block_sys
+MOV     DX,     word    PTR     block_sys+2
+
+W podanym przykladzie do rejestru CX zostanie wpisana mlodsza czesc 32-bitowej 
+zmiennej block_sys, a do rejestru DX, jego starsza czesc.
+
+W przypadku pominiecia operatora PTR sygnalizowany bylby blad asemblacji
+wynikajacy z niejednakowej dlugosc obu operandow.
+
+Operator PTR uzywany jest w wyrazeniach adresowych do scislego okreslania 
+atrybutow symbolu wystepujacego w wyrazeniu adresowym. 
+Po prawej stronie operator wystepuje wyrazenie adresowe, a po lewej atrybut 
+byte (8bit),
+word (16bit),
+dword (32bit),
+fword (48bit),
+qword (64bit),
+tword (80bit).
+
+Operator PTR nie wykonuje konwersji typow - dziala jedynie w trakcje asemblacji
+programu i nie moze zastepowac rozkazow wykonywanych w trakcie realizacji 
+programu. 
+
+Regula dotyczace jednakowej dlugosc operandow nie obowiazuje w odniesieniu do 
+rozkazow MOVSDX i MOVZX. Rozkazy te powoduja przepisanie zawartosci 8 lub 
+16-bitowego rejestru lub zawartosci lokacji pamieci do rejestru 16 lub 
+32-bitowego. 
+W przypadku MOVZX brakujace bity uzupelniane sa zerami, a w przypadku MOVSX
+bity sa wypelniane przez wielokrotnie powielony bit znaku kopiowanego rejestru.
+
+Polozenie pewnej lokacji pamieci wzgledem poczatku obszaru danych mozna takze
+wyznaczyc za pomoca rozkazu LEA, ktory wyznacza adres efektywny rozkazu, czyli
+polozenie lokacji pamieci wzgledem poczatku danych, na ktorej zostanie wykonana
+operacja. 
+Rozkaz LEA wyznacza adres efektywny w trakcie wykonywania programu, podczas gdy
+wartosc operatora OFFSET obliczana jest w trakcie translacji (asemblacji) 
+programu. 
+Wartosc offsetu wyznaczania jest w trakcie asemblacji moze ulec zmianie podczas
+konsolidacji i ladowania programu do pamieci; dokonuja tego konsolidator i 
+system operacyjny. 
+Nalezy zwrocic uwage, ze rozkaz LEA nigdy nie odczytuje zawartosci lokacji pamieci.
+Rozkaz LEA uzywany jest takze w obliczeniach nie zawsze zwiazanych z wyznaczaniem
+adresu zmiennej, np. mozna go zastosowac do obliczenia sumy zawartosci rejestrow
+i mnozenia. 
+Takie konstrukcje trzeba jednak stosowac ostroznie, poniewaz w przypadku 
+rozkazu LEA ewentualny nadmiar nie jest sygnalizowany. 
+
+Obliczenia sumy zawartosci rejestrow EBX i ECX:
+
+LEA     EAX,    [EBX + ECX]
+
+zamiast tradycyjnego rozwiazanie:
+
+MOV     EAX,    EBX
+ADD     EAX,    ECX
+
+Mnozenie liczby w EAX przez 5:
+
+LEA     EAX,    [EAX + EAX * 4]
+
+zamiast tradycyjnego rozwiazania:
+
+MOV     EBX,    5
+MULL    EBX
+
+Wykonywanie rozkazow pobieranych z pamieci w naturalnej kolejnosci nie pozwala 
+zmieniac sposobu obliczen w zaleznosci o wartosci uzyskiwanych wynikow posrednich. 
+Potrzebne sa wiec specjalne rozkazy (instrukcje), ktore w zaleznosci od wlasnosci
+uzyskanego wyniku (np. czy jest ujemny) zmienia porzadek wykonywania rozkazow. 
+Zmiana porzadku realizowana jest przez zwiekszenie lub zmniejszenie zawartosci
+wskaznika intrukcji (rejestru EIP).
+
+Do tego celu uzywane sa rozkazy sterujace, nazywane zazwyczaj "rozkazami skoku",
+ktorych zadaniem jest sprawdzenie pewnego warunku, np. czy znacznik ZF w 
+rejestrze stanu procesora zawiera wartosc 1 i odpowienie pokierowanie dalszym
+wykonywaniem programu.
+Jezeli warunek testowany przez rozkaz skoku jest spelniony, to procesor zmienia
+naturalny porzadek wykonywania rozkazow, jesli warunek jest nie spelniony, to
+procesor wykonuje dalej rozkazy w niezmienionym porzadku (po kolei, tak jak sa
+umieszczone w pamieci glownej). 
+
+Istnieje wiele rozkazow sterujacych (skokow) - dla kazdego rozkazu sterujacego 
+zdefiniowany jest pewien charakterystyczny warunek. 
+Niektore rozkazy testuja pojedyncze znaczniki w rejestrze stanu procesora, inne
+obliczaja wartosci wyrazen logicznych, w ktorych wystepuja zawartosci kilku 
+znacznikow. 
+Kazdy rozkaz sterujacy ma przypisany skrot literowy (mnemonik), ktory sklada sie
+z litery J (skrot od ang. jump - skok) i dalszych liter skojarzonych z nazwa 
+testowanego znacznika (np. JZ - skrot od jum if zero) lub typem operacji 
+porownania. 
+
+JA              skocz gdy wiekszy
+JNBE            skocz gdy niemniejszy i nierowny                CF=0,ZF=0
+
+JAE             skocz, gdy wiekszy lub rowny
+JNB             skocz, gdy niemniejszy
+JNC             skocz, gdy nie bylo przeniesienia (nadmiaru)    CF=0
+
+JB              skocz, gdy mniejszy                     
+JNAE            skocz, gdy niewiekszy i nie rowny
+JC              skocz, gdy bylo przeniesienie (nadmiar)         CF=1
+
+JBE             skoczy gdy mniejszy lub rowny
+JNA             skoczy gdy niewiekszy                           CF=1 or ZF = 1
+
+
+W jezyku maszynowym rozkaz skoku zajmuje zazwyczaj dwa bajty (w niektorych 
+przypadkach asembler lub kompilator musi jednak zastosowac rozkazy 6-bitowe).
+Pierwszy bajt opisuje czynnosc wykonywanaj przez rozkaz, drugi bajt (pole 
+adresowe) zawiera liczbe, ktora okresla dlugosc skoku. 
+
+Jezeli testowany warunek jest spelniony, to liczba (dodatnia lub ujemna)
+umieszczona w polu adresowym jest dodawana do wzkaznika intrukcji EIP, ponadto
+wskaznik intrukcji EIP jest zwiekszany o liczbe bajtow zajmowanych przez sam
+rozkaz skoku (zwykle o 2). 
+Jezeli warunek nie jest spelniony, to wskaznik intrukcji EIP jest zwiekszany o
+liczbe bajtow zajmowany przez rozkaz skoku (zwykle o 2) - pole adresowe jest
+ignorowane. 
+
+Zmniejszenie wskaznika intrukcji EIP powoduje, ze procesor rozpocznie ponowne
+wykonanie rozkazow, ktore byly wczesniej wykonanywane - powstaje wiec petla 
+rozkazowa.
+
+1. gdy testowany warunek jest spelniony
+
+EIP <- EIP + <liczba bajtow aktualnie wykonywanego rozkazu>
+           + <zawartosc pola adresowego rozkazu>
+
+2. gdy testowany warunek nie jest spelniony
+
+EIP <- EIP + <liczba bajtow aktualnie wykonanywanego rozkazu>
+
+Rozkazy sterujace, zwane "bezwarunkowymi", sluza do zmiany porzadku wykonywania 
+instrukcji (nie wykonuja one zadnego sprawdzenia, przyjmuja, ze testowany 
+warunek jest zawsze spelniony. 
+W architekturze x86_64 rozkazy tej grupy oznaczane sa mnemonikiem JMP.
+
+W architekturze x86 dostepne sa dwie odmiany rozkazow sterujacych (skokow)
+bezwarunkowych:
+- Skoki bezposrednie, jezeli wartosc wpisywana (albo dodawana) do rejestru EIP
+  podana jest w polu adresowym rozkazu.
+
+- Skoki posrednie, jezeli wartosc podana w polu adresowym wskazuje rejestr lub
+  lokacje pamieci, w ktorej znajduje sie nowa zawartosc EIP - mechanizm ten 
+  pozwala m.in. na wykonanie skoku do lokacji pamieci, ktorej adres zostanie 
+  obliczony dopiero w trakcji wykonywania programu.
+
+Przyklad skoku bezposredniego:
+
+sygnalizuj:
+            JMP     sygnalizuj      ; skok bezposredni
+
+Przyklad skoku posredniego:
+
+1)  JMP     EBX
+2)  wybor   DD      OFFSET      kontynuacja
+            JMP     dword   PTR     wybor
+    kontynuacja:
+
+Adres komorki pamieci, w ktorej umieszczony jest rozkaz do wykonania okresla 
+wskaznik instrukcji (nazywany takze licznikiem rozkazow). Natomiast polozenie
+argumentu, na ktorym zostanie wykonana operacja, moze byc okreslone w rozny 
+sposob, zaleznie od zastosowanego w rozkazie trybu adresowania (ang. adressing 
+mode). 
+Tryb adresowania okresla sposob, w jaki wyznaczane jest polozenie argumentu lub
+argumentow bioracych udzial w operacji.
+Argumenty moga znajdowac sie w rejestrach lub w pamieci glownej (operacyjnej)
+komputera. 
+Adres lokacji pamieci zawierajacej argument, na ktorym zostanie wykonana
+operacja nosi nazwe adresu efektywnego.
+Jesli operacja wykonywana jest na argumencie zajmuje 2, 4 lub wiecej bajtow, to
+podaje sie adres bajtu o nizszym adresie. 
+
+W podanych dalej opisach trybow adresowania stosowane sa oznaczenia symboliczne,
+odnoszace sie do procesorow roznych typow.
+Oznaczenie te odbiegaja od stosowanych w asemblerze dla procesorow x86,
+w szczegolnosci:
+Rejestry oznaczono symbolami R1, R2, R3, ...
+Zawartosci rejestrow oznaczono przez Regs[R1], Regs[R2], Regs[RE3], ...
+Zawartosci lokacji pamieci oznaczono przez Mem [],
+gdzie wartosc podana w nawiasach kwadratowych stanowi adres lokacji. 
+
+Adresowanie natychmiastowe jest najprostszym sposobem adresowania - w tym 
+przypadku arguemnt stanowi fragment kodu rozkazu i jest umieszczony
+bezposrednio za kodem operacji.
+Tak wiec w trakcji pobierania rozkazu z pamieci jednoczesnie pobierany jest
+argument natymiastowy stanowiacy fragment calego rozkazu. 
+
+Przyklad: dodawanie liczby 3 do rejestru
+zapis symboliczny i jego postac w asemblerze:
+    Regs[R4] <- Regs[R4] + 3
+    ADD     R4,    #3
+podobny zapis w asemblerze Intel:
+    ADD     ESI,    3
+
+W przypadku adresowania bezposredniego, w rozkazie wystepuje kilkubajtowe 
+(zazwyczaj 4-bajtowe) pole adresowe, w ktorym umieszczany jest adres argumentu.
+
+Przyklad: dodawanie zawartosci lokacji pamieci o adresie 5432 do rejestru
+
+zapis symboliczny i jego postac w asemblerze:
+    Regs[R1] <- Regs[R1] + Mem[5432]
+    ADD     R1,     (5432)
+
+podobny zapis w asemblerze Intel:
+    ADD     BX,     ds:[5432]
+
+
+Inny przyklad adresowania bezposredniego (asembler Intel)
+    maska       DD      5252FFFFH
+    XOR         EBX,    maska
+
+Odmiana adresowania bezposredniego jest adresowanie rejestrowe, gdy argumenty
+operacji sa zawarte w rejestrach procesora. Wtedy w rozkazie adres argumentu 
+przyjmuje postac indentyfikatora (numeru) rejestru.
+
+Poniewaz w celu pobrania argumentow nie trzeba (dodatkowo) siegac do pamieci, 
+rozkazy z adresowaniem rejestrowym wykonuja sie szybciej.
+
+Przyklad: dodawanie zawartosci rejestrow
+zapis symboliczny i jego postac w asemblerze:
+    Regs[R4] <- Regs[R4] + Regs[R3]
+    ADD     R4,     R3
+
+podobny zapis w asemblerze Intel:
+    ADD     DH,     CL
+
+W przypadku adresowania indeksowego adres argumentu okreslony jest przez sume
+zawartosci pola adresowego rozkazu i rejstru indeksowego. 
+
+Przyklad: dodawanie do rejstru R4 zawartosci lokacji pamieci - adres tej lokacji
+okresla zawartosc rejestru R1 powiekszona o 360
+
+zapis symboliczny i jego postac w asemblerze:
+    Regs[R4] <- Regs[R4] + Mem[360 + Regs[R1]]
+    ADD     R4,     360(R1)
+
+podobny zapis w asemblerze Intel:
+    ADD     EAX,    [EBX + 360]
+
+W architekturze x86 role rejstru indeksowego moze pelnic dowolny 32-bitowy 
+rejestr ogolnego przeznaczenia EAX, EBX, ...
+
+W przypadku szczegolnym pole adresowe moze byc pominiete, co oznacza ze adres
+argumentu okreslony jest wylaczenie przez zawartosc rejestru indeksowego. W
+literaturze tego rodzaju adresowanie okreslane jest jako adresowanie za pomoca
+wskaznikow.
+
+Przyklad: dodawanie do rejestru R4 zawartosci lokacji pamiec wskazaje przez
+          zawartosc rejestru R1
+
+zapis symboliczny i jego postac w asemblerze:
+    Regs[R4] <- Regs[R4] + Mem[Regs[R1]]
+    ADD     R4,     (R1)
+
+podobny zapis w asemblerze Intel:
+    ADD,    EAX,    [ESI]
+
+
+Bardziej rozbudowana wersja adresowania indeksowego jest adresowanie bazowo-
+indeksowe ze skalowaniem (dostepne m.in. w procesorach rodziny x86). W tym 
+przypadku adres argumentu okreslony jest przez sume ponizszych skladnikow:
+
+- zawartosc rejestru bazowego
+- zawartosc rejestru indeksowanego pomnozonego przez wpolczynnik skali
+- pola adresowego rozkazu
+
+Przyklad: dodawanie do rejestru R1 zawartosci lokacji pamieci - adres tej 
+          lokacji pamieci - adres tej lokacji okresla suma zawartosc rejestru
+          R2, zawartosc rejestru R3, pomnozonej przez 4 oraz liczby 240
+
+zapis symboliczny i jego postac w asemblerze:
+    Regs[R1] <- Regs[R1] + Mem[240 + Regs[R2] + Regs[R3] * 4]
+    ADD     R1,     240(R2)[R3*4]
+
+podobny zapis w asemblerze Intel:
+    ADD     EAX,    [ESI + EDI*4 + 240]
+
+Sposob obliczania adresu argumentu przy zastosowaniu adresowania 
+bazowo-indeksowego, stosowany w procesorach x86, pokazywany jest na rysunku.
+Zawartosc rejestru indeksowego moze byc opcjonalnie mnozona przez 1, 2, 4 lub 8
+(tzw. wspolczynnik skali).
+
+                                    zawartosc pola adresowego instrukcji
+                                    (pole adresowe moze byc pominiete)
+                                                |                                                
+zawartosc 32-bitowego rejestru                  |
+ogolnego przeznaczenia                          v
+(EAX, EBX, ECX, ...)-------------------------> "+"
+                                                |
+zawartosc 32-bitowego rejestru       x1         |
+ogolnego przeznaczeia                x2         |
+(z wyjatkiego ESP)-------------------x4------> "+"
+                                     x8         |
+                                                |
+                                                v
+                                        adres efektywny
+
+Przyklad:
+    ADD     AH,     [ESI + 4 * EDI + 12]
+
+Pokazany na rysunku schemat adresowania bazowo-indeksowego w procesorach x86
+obejmuje takze wczesniej wymienione przypadki szczegolne. 
+
+Jesli w zapisie rozkazu nie okreslono rejestru bazowego ani indeksowego, to 
+adres efektywny jest rowny zawartosci pola adresowego rozkazu.
+
+Opcjonalnie mozna wskazac tylko rejestr bazowy albo rejestr indeksowy z 
+wymaganym wspolczynnikiem skali; jesli w zapisie rozkazu podano rejestr bazowy
+lub indeksowy, to pole adresowe rozkazu moze byc pominiete. 
+
+
+
+Poslugujac sie adresowaniem bazowo-indeksowym (lub tylko indeksowym) mozna latwo
+budowac petle rozkazowe, w ktorych ten sam rozkaz wykonuje dzialania na kolejnych
+elementach tablicy.
+
+W petlach tego typu zwykle rejestr bazowy wskazuje polozenie tablicy w pamieci,
+a rejestr indeksowy wskazuje polozenie elementu tablicy wzgledem jej poczatku.
+Moze tez byc uwzgledniona wartosc podana w polu adresowym rozkazu. 
+
+Powracamy do omawianego wczesniej przykladu sumowania liczb w tablicy. W 
+podanym dalej rozwiazaniu uzywana jest petla rozkazowa.
+
+W pamieci glownej (operacyjnej) komputera, poczawsze od adresu 72308H, znajduje
+sie tablica zawierajaca piec liczb 16-bitowych calkowitych bez znaku - tablica
+ta stanowi czesc obszaru danych programu. 
+
+Adres 
+
+Przyklad:
+    ADD     AH,     [ESI + 4 * EDI + 12]
+
+Pokazany na rysunku schemat adresowania bazowo-indeksowego w procesorach x86
+obejmuje takze wczesniej wymienione przypadki szczegolne. 
+
+Jesli w zapisie rozkazu nie okreslono rejestru bazowego ani indeksowego, to 
+adres efektywny jest rowny zawartosci pola adresowego rozkazu.
+
+Opcjonalnie mozna wskazac tylko rejestr bazowy albo rejestr indeksowy z 
+wymaganym wspolczynnikiem skali; jesli w zapisie rozkazu podano rejestr bazowy
+lub indeksowy, to pole adresowe rozkazu moze byc pominiete. 
+
+
+
+Poslugujac sie adresowaniem bazowo-indeksowym (lub tylko indeksowym) mozna latwo
+budowac petle rozkazowe, w ktorych ten sam rozkaz wykonuje dzialania na kolejnych
+elementach tablicy.
+
+W petlach tego typu zwykle rejestr bazowy wskazuje polozenie tablicy w pamieci,
+a rejestr indeksowy wskazuje polozenie elementu tablicy wzgledem jej poczatku.
+Moze tez byc uwzgledniona wartosc podana w polu adresowym rozkazu. 
+
+Powracamy do omawianego wczesniej przykladu sumowania liczb w tablicy. W 
+podanym dalej rozwiazaniu uzywana jest petla rozkazowa.
+
+W pamieci glownej (operacyjnej) komputera, poczawsze od adresu 72308H, znajduje
+sie tablica zawierajaca piec liczb 16-bitowych calkowitych bez znaku - tablica
+ta stanowi czesc obszaru danych programu. 
+
+Adres 
+72312
+Przyklad:
+    ADD     AH,     [ESI + 4 * EDI + 12]
+
+Pokazany na rysunku schemat adresowania bazowo-indeksowego w procesorach x86
+obejmuje takze wczesniej wymienione przypadki szczegolne. 
+
+Jesli w zapisie rozkazu nie okreslono rejestru bazowego ani indeksowego, to 
+adres efektywny jest rowny zawartosci pola adresowego rozkazu.
+
+Opcjonalnie mozna wskazac tylko rejestr bazowy albo rejestr indeksowy z 
+wymaganym wspolczynnikiem skali; jesli w zapisie rozkazu podano rejestr bazowy
+lub indeksowy, to pole adresowe rozkazu moze byc pominiete. 
+
+
+
+Poslugujac sie adresowaniem bazowo-indeksowym (lub tylko indeksowym) mozna latwo
+budowac petle rozkazowe, w ktorych ten sam rozkaz wykonuje dzialania na kolejnych
+elementach tablicy.
+
+W petlach tego typu zwykle rejestr bazowy wskazuje polozenie tablicy w pamieci,
+a rejestr indeksowy wskazuje polozenie elementu tablicy wzgledem jej poczatku.
+Moze tez byc uwzgledniona wartosc podana w polu adresowym rozkazu. 
+
+Powracamy do omawianego wczesniej przykladu sumowania liczb w tablicy. W 
+podanym dalej rozwiazaniu uzywana jest petla rozkazowa.
+
+W pamieci glownej (operacyjnej) komputera, poczawsze od adresu 72308H, znajduje
+sie tablica zawierajaca piec liczb 16-bitowych calkowitych bez znaku - tablica
+ta stanowi czesc obszaru danych programu. 
+
+Adres 
+72312H
+dd
+Przyklad:
+    ADD     AH,     [ESI + 4 * EDI + 12]
+
+Pokazany na rysunku schemat adresowania bazowo-indeksowego w procesorach x86
+obejmuje takze wczesniej wymienione przypadki szczegolne. 
+
+Jesli w zapisie rozkazu nie okreslono rejestru bazowego ani indeksowego, to 
+adres efektywny jest rowny zawartosci pola adresowego rozkazu.
+
+Opcjonalnie mozna wskazac tylko rejestr bazowy albo rejestr indeksowy z 
+wymaganym wspolczynnikiem skali; jesli w zapisie rozkazu podano rejestr bazowy
+lub indeksowy, to pole adresowe rozkazu moze byc pominiete. 
+
+
+
+Poslugujac sie adresowaniem bazowo-indeksowym (lub tylko indeksowym) mozna latwo
+budowac petle rozkazowe, w ktorych ten sam rozkaz wykonuje dzialania na kolejnych
+elementach tablicy.
+
+W petlach tego typu zwykle rejestr bazowy wskazuje polozenie tablicy w pamieci,
+a rejestr indeksowy wskazuje polozenie elementu tablicy wzgledem jej poczatku.
+Moze tez byc uwzgledniona wartosc podana w polu adresowym rozkazu. 
+
+Powracamy do omawianego wczesniej przykladu sumowania liczb w tablicy. W 
+podanym dalej rozwiazaniu uzywana jest petla rozkazowa.
+
+W pamieci glownej (operacyjnej) komputera, poczawsze od adresu 72308H, znajduje
+sie tablica zawierajaca piec liczb 16-bitowych calkowitych bez znaku - tablica
+ta stanowi czesc obszaru danych programu. 
+
+Adres 
+72312H
+dd
+Przyklad:
+    ADD     AH,     [ESI + 4 * EDI + 12]
+
+Pokazany na rysunku schemat adresowania bazowo-indeksowego w procesorach x86
+obejmuje takze wczesniej wymienione przypadki szczegolne. 
+
+Jesli w zapisie rozkazu nie okreslono rejestru bazowego ani indeksowego, to 
+adres efektywny jest rowny zawartosci pola adresowego rozkazu.
+
+Opcjonalnie mozna wskazac tylko rejestr bazowy albo rejestr indeksowy z 
+wymaganym wspolczynnikiem skali; jesli w zapisie rozkazu podano rejestr bazowy
+lub indeksowy, to pole adresowe rozkazu moze byc pominiete. 
+
+
+
+Poslugujac sie adresowaniem bazowo-indeksowym (lub tylko indeksowym) mozna latwo
+budowac petle rozkazowe, w ktorych ten sam rozkaz wykonuje dzialania na kolejnych
+elementach tablicy.
+
+W petlach tego typu zwykle rejestr bazowy wskazuje polozenie tablicy w pamieci,
+a rejestr indeksowy wskazuje polozenie elementu tablicy wzgledem jej poczatku.
+Moze tez byc uwzgledniona wartosc podana w polu adresowym rozkazu. 
+
+Powracamy do omawianego wczesniej przykladu sumowania liczb w tablicy. W 
+podanym dalej rozwiazaniu uzywana jest petla rozkazowa.
+
+W pamieci glownej (operacyjnej) komputera, poczawsze od adresu 72308H, znajduje
+sie tablica zawierajaca piec liczb 16-bitowych calkowitych bez znaku - tablica
+ta stanowi czesc obszaru danych programu. 
+
+Adres 
+72312H
+dd
+Przyklad:
+    ADD     AH,     [ESI + 4 * EDI + 12]
+
+Pokazany na rysunku schemat adresowania bazowo-indeksowego w procesorach x86
+obejmuje takze wczesniej wymienione przypadki szczegolne. 
+
+Jesli w zapisie rozkazu nie okreslono rejestru bazowego ani indeksowego, to 
+adres efektywny jest rowny zawartosci pola adresowego rozkazu.
+
+Opcjonalnie mozna wskazac tylko rejestr bazowy albo rejestr indeksowy z 
+wymaganym wspolczynnikiem skali; jesli w zapisie rozkazu podano rejestr bazowy
+lub indeksowy, to pole adresowe rozkazu moze byc pominiete. 
+
+
+
+Poslugujac sie adresowaniem bazowo-indeksowym (lub tylko indeksowym) mozna latwo
+budowac petle rozkazowe, w ktorych ten sam rozkaz wykonuje dzialania na kolejnych
+elementach tablicy.
+
+W petlach tego typu zwykle rejestr bazowy wskazuje polozenie tablicy w pamieci,
+a rejestr indeksowy wskazuje polozenie elementu tablicy wzgledem jej poczatku.
+Moze tez byc uwzgledniona wartosc podana w polu adresowym rozkazu. 
+
+Powracamy do omawianego wczesniej przykladu sumowania liczb w tablicy. W 
+podanym dalej rozwiazaniu uzywana jest petla rozkazowa.
+
+W pamieci glownej (operacyjnej) komputera, poczawsze od adresu 72308H, znajduje
+sie tablica zawierajaca piec liczb 16-bitowych calkowitych bez znaku - tablica
+ta stanowi czesc obszaru danych programu. 
+
+Adres 
+72312H
+dd
+Przyklad:
+    ADD     AH,     [ESI + 4 * EDI + 12]
+
+Pokazany na rysunku schemat adresowania bazowo-indeksowego w procesorach x86
+obejmuje takze wczesniej wymienione przypadki szczegolne. 
+
+Jesli w zapisie rozkazu nie okreslono rejestru bazowego ani indeksowego, to 
+adres efektywny jest rowny zawartosci pola adresowego rozkazu.
+
+Opcjonalnie mozna wskazac tylko rejestr bazowy albo rejestr indeksowy z 
+wymaganym wspolczynnikiem skali; jesli w zapisie rozkazu podano rejestr bazowy
+lub indeksowy, to pole adresowe rozkazu moze byc pominiete. 
+
+
+
+Poslugujac sie adresowaniem bazowo-indeksowym (lub tylko indeksowym) mozna latwo
+budowac petle rozkazowe, w ktorych ten sam rozkaz wykonuje dzialania na kolejnych
+elementach tablicy.
+
+W petlach tego typu zwykle rejestr bazowy wskazuje polozenie tablicy w pamieci,
+a rejestr indeksowy wskazuje polozenie elementu tablicy wzgledem jej poczatku.
+Moze tez byc uwzgledniona wartosc podana w polu adresowym rozkazu. 
+
+Powracamy do omawianego wczesniej przykladu sumowania liczb w tablicy. W 
+podanym dalej rozwiazaniu uzywana jest petla rozkazowa.
+
+W pamieci glownej (operacyjnej) komputera, poczawsze od adresu 72308H, znajduje
+sie tablica zawierajaca piec liczb 16-bitowych calkowitych bez znaku - tablica
+ta stanowi czesc obszaru danych programu. 
+
+Adres 
+72312H           |
+72311H  00000001-| 
+72310H  00000001-|piaty element tablicy 
+7230FH  00000001-| 
+7230EH  00000001-|czwarty element tablicy 
+7230DH  00001101-|
+7230CH  00000001-|trzeci element tablicy 
+7230BH  00000111-|
+7230AH  00000001-|drugi element tablicy 
+72309H  00000001-|
+72308H  00000001-|pierwszy element tablicy
+72307H           |
+
+Obliczenie sumy wmaga wiec wykonania w petli 4 operacji dodawania. Poczatkowa 
+zawartosc licznika obiegow petli wpisywania jest do rejestru ECX.
+
+Sterowanie petla wykonywane jest za pomoca rozkazu LOOP, ktory opisany jest dalej.
+
+Dodatkowo zakladamy, ze kolejne sumy uzyskiwane w trakcie dodawania dadza sie 
+przedstawic w postaci liczb 16-bitowych (nie wystapi przepelnienie - nadmiar).
+
+W podanym przykladzie istotna role odgrywa rozkaz dodawania:
+    ADD     AX,     ds:[7230AH][EBX]
+
+Adres [7230AH] wskazuje polozenie drugiego elementu tablicy (adres pierwszego
+elementu wynosi 72308H).
+
+Rejestr EBX pelni funkcje rejestru indeksowego. 
+W kazdym obiegu petli zawartosc rejestru EBX jest zwiekszana o 2, tak aby 
+wskazac kolejny element tablicy. 
+
+MOV     ECX,    4           ; licznik obiegow petli
+MOV     AX,     ds:[72308H] ; poczatkowa wartosc sumy
+MOV     EBX,    0           ; poczatkowa zawartosc rejstru indeksowego
+
+ptl_suma:
+    ADD     AX,     ds:[7230AH][EBX]
+    
+    ADD     EBX,        2       ; zwiekszenie indeksu
+    LOOP    ptrl_suma           ; sterowanie petla
+
+Rozkaz loop umieszczony na koncu petli rozkazowej stanowi odmiane rozkazu skoku 
+warunkowego:
+- najpierw rozkaz zmniejsza zawartosc rejestru ECX o 1 (w przypadku szczegolnym,
+  jesli zawartosc ECX wynosi 0, to po zmniejszenu w ECX wynosi 0, to po 
+  zmniejszeniu w ECX znajdowac sie bedzie liczba -1, czyli FFFFFFFFH).
+
+- nastepnie, jesli po odejmowaniu rejestr ECX zawiera liczbe rozna od zera, to
+  warunek jest spelniony i nastepuje skok na poczatek petli
+
+- jesli po odejmowaniu ECX zawiera 0, to warunek nie jest spelniony i nastepuje
+  przejscie do nastepnego rozkazu
+
+W przypadku, gdy warunek jest spelniony, skok na poczatek petli polega w istocie
+na dodaniu do rejestru EIP liczby (w tych przypadku ujemnej) zawartej w polu
+adresowym rozkazu LOOP.
+
+Odpowiednia zawartosc pola adresowego rozkazu LOOP jest wyznaczana przez asembler
+lub kompilator ("reczne" obliczanie wymaga znajomosci liczby bajtow zajmowanych
+przez poszczegolne rozkazy wchodzace w sklad petli).
+
+W niektorych sytuacjach rozkaz LOOP mozna zastapic para rozkazow:
+
+    DEC     ECX
+    JNZ     jakas_etykieta
+
+Rozkaz LOOP jest powszechnie stosowany do organizacji petli rozkazowych.
+
+W tym przypadku adres podany w polu adresowym wskazuje lokacje pamieci 
+(zwykle 4-bajtowa), w ktorej zawarty jest adres argumentu.
+
+Przyklad: dodawanie do rejestru R4 zawartosci lokacji pamieci, ktorej adres
+          zawarty jest w lokacji pamieci wskazanej przez rejestr R3
+
+zapis symboliczny i jego postac w asemblerze:
+    Regs[R4] <- Regs[R4] + Mem[Mem[Regs[R3]]
+    ADD     R4,     @ (R3)
+
+w procesorach x86 adresowanie posrednie dostepne jest tylko dla rozkazow
+sterujacych (skokow)
+
+ADRESOWANIE Z AUTOINKREMENTACJA
+Ten rodzaj adresowania (niedostepny w procesorach x86) stanowi rozszerzenie
+adresowania ideksowego: dodatkowo, po wykonaniu wlasciwej operacji automatycznie
+zwiekszana jest zawartosc rejestru indeksowego.
+
+Przyklad: dodawanie do rejestru R1 zawartosc lokacji pamieci, ktorej adres 
+          podany jest w rejestrze R2. Po wykonaniu dodawania zawartosci rejestru
+          R2 jest zwiekszana o stala d (zwykle 2, 4 lub 8).
+
+zapis symboliczny i jego postac w asemblerze:
+    Regs[R1] <- Regs[R1] + Mem[Regs[R2]]
+    Regs[R2] <- Regs[R2] + d
+
+    ADD     R1,     (R2)+
+
+ADRESOWANIE Z AUTODEKREMENTACJA
+Ten rodzaj adresowania (niedostepny w procesorach x86) stanowi rozszerzenie 
+adresowania indeksowego: dodatkowo, przed wykonaniem wlasciwej operacji
+automatycznie zmniejszana jest zawartosc rejestru indeksowego.
+
+Przyklad: dodawanie do rejestru R1 zawartosci lokacji pamieci, ktorej adres 
+          podany jest w rejestrze R2. Przed wykonaniem dodawania zawartosc
+          rejestru R2 jest zmniejszona  o stala d (zwykle 2, 4 lub 8).
+
+zapis symboliczny i jego postac w asemblerze:
+    Regs[R2] <- Regs[R2] - d
+    Regs[R1] <- Regs[R1] + Mem[Regs[R2]]
+
+    ADD     R1,     -(R2)
+
+OBLICZANIE ADRESU EFEKTYWNEGO
+W procesorach zgodnych z architektura x86 adres efektywny obliczany jest 
+modulo 2^(32), tj. po obliczeniu symy zawartosci rejestrow indeksowych bierze
+sie pod uwage 32 najmniej znaczace bity uzyskanego wyniku. 
+
+Podana regula pozwala w szczegolnosci na uzyskiwanie adresow efektywnych 
+mniejszych od zawartosci pola adresowego rozkazu - ilustruje to przyklad:
+
+rozkaz MOV...., [EBX] + 000003A9H
+
+| .. | .. | A9 | 03 | 00 | 00 |
+
+rejestr EBX | FFFFFFFCH | 
+
+  000003A9
++ FFFFFFFC
+__________
+10000003A5 - adres efektywny
+
+ARCHITEKTURY 32 I 64-BITOWE
+
+W ciagu ostatnich 30 lat nastapily bardzo znaczne zmiany w konstrukcji 
+procesorow zgodnych z architektura x86, ale zmiany te mialy charakter lagodny,
+nie powodujac istotnych trudnosci dla uzytkownikow komputerow.
+
+W szczegolnosci wprowadzono posredni tryby pracy, np. V86 symulujacy prace 
+procesora 8086 w procesorach nowszych typow. 
+
+Aktualnie, przejsci z architektury 32-bitowej na 64-bitowa odbywa sie takze w
+sposob niezauwazalny dla uzytkownikow komputerow.
+
+Okolo roku 2000 firma Intel opracowala nowa archtekture, IA-64 (procesor Itanium),
+calkowicie odrebna od architektury x86 (Intel 32).
+
+Architektura IA-64 nie rozpowszechnila sie, natomiast aprobate uzyskala 
+architektura 64-bitowa opracowana przez firme AMD znana jako AMD64 (procesor
+Opteron, 2003).
+
+Archtektura AMD64 stanowi 64-bitowe rozwiniecie powszechnie uzywanej archtektury
+x86.
+
+Kierujac sie podobnymi przeslankami firma Intel zaprojektowala architekture 
+IA-32e/EM64T - listy rozkazow procesorow zgodnych z architektura AMD64 i Intel 64
+sa prawie identyczne. 
+
+Po wprowadzeniu procesorow o architekturze 64-bitowej firma Intel przyjela 
+oznaczenia Intel 32 zamiast IA-32 i Intel 64 zamiast IA-32e/EM64T.
+
+Warto zwrocic uwage, ze oznaczenie IA-64 (takze Intel itanium) dotyczy
+nowoczesnej architektury procesor, aczkolwiek nie uzywanych w komputerach PC.
+
+Procesory rodziny x86 moga pracowac w kilku trybach, z ktorych najwazniejsze 
+znaczenie maja:
+
+- tryb rzeczywisty (ang. real mode), w ktorym procesor zachowuje sie podobnie
+  do swojego poprzednika 8086/8088
+
+- tryb chroniony (ang. protected mode), w ktorym procesor stosuje zlozone 
+  mechanizmy adresowania i ochrony pamieci, wspomaga implementacje pamieci 
+  wirtualnej i wielozadaniowosci, blokuje niektore operacje dla zwyklych 
+  programow uzytkowych
+
+Bezposrednio po wlaczeniu (lub zresetowaniu) komputera procesor pracuje w trybie
+rzeczywistym, dopiero uruchomiony system operacyjny (np. Windows, Linux)
+powoduje przelaczenie (w sposob programowy) do trybu chronionego.
+
+Tryb chroniony stanowi obecnie podstawowy tryb pracy procesora, w tym trybie 
+pracuja systemy operacyjne i wykonywane sa aplikacje. 
+
+Wyjatkowo, spotyka sie programy opracowane w latach 80. i 90. ubieglego stulecia,
+ktore byly przewidziane do wykonywania w trybie rzeczywistym. Aktualnie 
+eksploatowane systemy operacyjne zazwyczaj nie pozwalaja na wykonywanie programow
+tej klasy. Ewentualnie mozna je uruchomic za pomoca maszyny wirtualnej (np. 
+DOSBox). 
+
+Opisane delej mechanizmy adresowania w trybie rzeczywistym aktualnie uzywane w 
+bardzo waskim zakresie (np. bezposrednio po wlaczeniu komputera). Jednak ich 
+znajomosc pozwala lepiej zrozumiec rozwoj architektury procesorow.
+
+W trybie rzeczywstym procesor odwoluje sie do pamieci glownej (operacyjnej), 
+ktorej rozmiar ograniczony jest do 1MB, co wymaga stosowania 20-bitowych lini 
+adresowych. 
+
+W trakcie wykonywania rozkazow, ktore odwoluja sie do komorek pamieci procesor
+wyznacza kazdorazowo adres fizyczny pamieci. 
+
+W procesie wyznaczanie adresu istotna role odgrywaja 16-bitowe rejestry 
+segmentowe: CS, DS, ES, SS (i wprowadzone pozniej FS, GS), w szczegolnosci:
+
+- rejestr CS (ang. code segment) wskazuje polozenie w pamieci obszaru 
+  rozkazowego programu
+
+- rejestr DS (ang. data segment) wskazuje polozenie obszaru danych programu
+
+- rejestr SS (ang. segment stack) wskazuje polozenie stosu
+
+- rejestry ES, FS, GS wskazujace na segementy danych
+
+W trybie rzeczywistym:
+adres fizyczny = zawartosc rejestru segmentowego * 16 + przesuniecie
+
+W trybie rzeczywistym adres lokacji pamieci wyrazany jest zazwyczaj w postaci
+dwoch liczb:
+    segment: offset
+
+Pare ta czesto nazywa sie w literaturze adresem logicznym.
+
+Przykladowo, 32-bitowy programowy licznik czasu umieszczony jest w lokacji 
+pamieci o adresie logicznym 40H : 6CH tzn. w lokacji pamieci o adresie fizycznym
+40H * 16 + 6CH = 45CH.
+
+Sposob obliczania adresu fizycznego w trybie chronionym jest znacznie bardziej
+skomplikowany: zawartosci rejestrow segmentowych traktowane sa jako indeksy do
+tablic systemowych, w ktorych zawarte sa adresy podlegajace jeszcze dalszym 
+przeksztalceniom w ramach mechanizmu stronnicowania.
+
+We wspolczesnych systemach operacyjnych obserwuje sie stosowanie trybow 
+adresowania, ktore marginalizuja role rejestrow segmentowych (CS, DS, ...).
+
+ORGANIZACJA STOSU
+
+W ujeciu abstrakcyjnym stos stanowi liniowa strukture danych o nieograniczonej 
+pojemnosci. 
+
+Stos dostepny jest do zapisywania i odczytywania danych tylko z jednego konca, 
+nazywanego wierzcholkiem stosu. 
+
+Stos klasyfikowany jest jako struktura danych typu LIFO (ang. Last In, Fist Out)
+- ostatni na wejsciu, pierwszy na wyjsciu. 
+
+Wprowadzenie nowej pozycji danych na stos nazywane jest zapisem lub zaladowaniem
+(ang. pushing), a odwrotnoscia tej operacji jest odczyt lub zdjecie (ang. popping).
+
+W typowych komputerach stos umieszczony jest w pamieci operacyjnej, przy czym 
+kolejne danej zapisywane na stosie lokowane sa w komorkach pamieci o coraz 
+nizszych adresach - "stos rosnie w kierunku malejacych adresow".
+
+WIERZCHOLEK STOSU
+
+W operacjach wykonywanych na stosie szczegolne znaczenie ma ostatnio zapisana
+dana, stanowiaca wierzcholek stosu. 
+
+Polozenie wierzcholka stosu w pamieci komputera wskazuje rejestr nazywany
+wskaznikiem stosu (ang. stack pointer).
+
+W architekturze x86 role wskaznika stosu pelni 32-bitowy rejestr ESP, natomiast
+w architekturze x86-64 - 64-bitowy rejestr RSP.
+
+Zatem rejestr ESP (lub RSP) wskazuje adres komorki pamieci, w ktorej znajduje
+sie dana ostatnio zapisana na stosie. 
+
+W klasycznym ujeciu, ze stosu moze byc odczytywana dana znajdujaca sie tylko na 
+jego wierzcholku, co oznacza, ze dostep do danej znajdujacej wewnatrz stosu 
+wymaga uprzedniego usuniecia innych danych. 
+
+Jak pokazemu dalej wspolczesne procesory udostepniaja mechanizmy adresowania,
+ktore pozwalaja na dostep do danych znajdujacych sie wewnatrz stosu bez 
+koniecznosci usuwania innych danych. Stos w komputerze nie moze byc wiec
+traktowany jako idealne odzwierciedlenie struktury danych LIFO (ang. Last In, 
+First Out).
+
+OPERACJE PUSH I POP
+
+Procesor realizuje dwie podstawowe operacje stosu:
+
+- PUSH - zapisywanie danych na stosie
+- POP  - odczytywanie danych ze stosu
+
+W archtekturze x86 (w trybie 32-bitowym) przez zapisaniem nowej danej na stosie 
+procesor zmniejsza rejestr ESP o 4 ("stos rosnie w kierunku malejacych adresow"), 
+analogicznie przy odczytywaniu zwieksza ESP o 4 po odczytaniu danej. 
+
+Analogicznie, w trybie 64-bitowym przez zapisaniem nowej danej na stosie 
+procesor zmniejsza rejestr RSP o 8, a przy odczytaniu zwieksza RSP o 8 po 
+odczytaniu danej. 
+
+W trybie 32-bitowym wymaga sie by zawartosc rejestru ESP byla podzielna przez 4,
+czyli zawartosc rejestru ESP musi wskazywac lokacje pamieci o adresie podzielnym
+przez 4.
+
+W trybie 64-bitowym zawartosc rejestr RSP musi byc podzielna przez 8, a w 
+niektorych przypadkach przez 16.
+
+Rozkazy PUSH i POP maja jeden operand, ktorym najczesciej jest 32-bitowy rejestr
+procesora (albo 64-bitowy a architekturze 64-bitowej).
+
+Przykladowo, rozkaz:
+    PUSH    ECX
+powoduje zapisanie na stosie zawartosci rejstru ECX.
+
+Rozkaz:
+    POP     EDI
+powoduje usuniecie danej na wierzchloku stosu i wpisanie jej do rejestru EDI.
+
+Po usunieciu danej z wierzcholka nowym wierzcholkiem staje sie dana, ktora 
+uprzednio znajdowala sie pod wierzcholkiem. Zmiana ta jest wynikiem 
+zwiekszenia zawartosci wskaznika stosu ESP o 4 (w trybie 32-bitowym).
+
+Warto zwrocic uwage, ze pobranie danej ze stosu za pomoca rozkazu POP nie 
+oznacza usuniecia tej danej z pamieci - pozostaje ona nadal w obszarze
+niezajetym stosu. Data na nie nalezy jednak do obszaru danych stosu i nie moze 
+byc uzywana do obliczen - w kazdej chwili moze byc nadpisana w wyniku wykonania 
+instrukcji PUSH lub w skutek wystapienia przerwania sprzetowego.
+
+Operandem rozkazow PUSH i POP moze byc takze zmienna znajdujaca sie w pamieci,
+np. 
+    wynik   DD  2345
+    PUSH    wynik
+
+Ponadto operandem rozkazu PUSH moze byc wartosc liczbowa, np.
+    PUSH 013248DH
+
+W praktyce programowania wystepuja wielokrotnie sytuacje, w ktorych konieczne
+jest tymczasowe przechowanie zawartosci rejestru - zazwyczaj rejestrow 
+ogolnego przeznaczenia jest zbyt malo by przechowac w nich wszystkie wyniki 
+posrednie wystepujace w trakcie obliczen.
+
+Wyniki posrednie uzyskiwane w trakcie obliczen mozna przechowywac w zwyklym
+obszarze danych programu - operacja ta (rozkaz MOV) wymaga podania dwoch 
+argumentow: zapisywanej wartosci i adresu komorki pamieci, w ktorej ta wartosc
+ma zostac zapisana. 
+
+Taka technika jest dosc niepraktyczna, poniewaz przechowanie potrzebne jest
+tylko przez krotki odcinek czasu, natomiast lokacja pamieci musi byc rezerwowana
+na caly czas wykonywania programu. 
+
+Zapisywanie wynikow posrednich na stosie jest wygodniejsze: podaje sie wylacznie
+wartosc, ktora ma byc zapisana, przy czym wylacznie wartosc, ktora ma byc 
+zapisana, przy czym nie potrzeba podawac adresu - zapisana wartosc zostaje 
+umieszczona na wierzchloku stosu.
+
+Ponadto po usunieciu danej ze stosu, w zwolnionym obszarze pamieci moga byc 
+zapisane inne dane. 
+
+TYPOWE ZASTOSOWANIE STOSU
+
+- przechowywanie wynikow posrednich
+- obliczanie wartosci wyrazen artymentycznych
+- przechowywanie adresu powrotu podprogramu
+- przechowywanie zmiennych lokowanych dynamicznie
+- przekazywanie parametrow do podprogramu
+
+FORMATY DANYCH ZAPISYWANYCH NA STOSIE
+
+W architekturze 32-bitowej na stosie moga byc zapisaywane wylaczeni wartosci 
+32-bitowe (4 bajty), analogicznie w architekturze 64-bitowej (8 bajtow).
+
+Jesli koniecznie jest zapisanie danej kodowanej na mniejszej liczbie bitow, to 
+nalezy zapisac ta dana w postaci rozszerzonej, np. do 32 bitow, a po odczycie 
+zingnorowac starsze bity. 
+
+ROWNOWAZENIE LICZBY OPERACJI ZAPISU I ODCZYTU NA STOSIE
+
+W praktyce programowania nalezy zwraca uwage na rownowazenie liczby operacji 
+zapisu na stos (PUSH) i odczytu ze stosu (POP).
+
+W bardziej rozbudowanych programach wystepuja sytuacje nadzwyczajne: 
+uzytkownik wprowadza czasami bledne dane, wskutek czego petle rozkazowe moga
+konczyc sie po wykonaniu mniejszej liczby obiegow niz planowane, niektore 
+fragmenty moga byc pominiete, co w rezultacje moze powodowac niezrownowazenie
+stosu - wynikajace stad bledy moga byc trudne do wykrycia. 
+
+ORGANIZACJA STOSU W INNYCH ARCHITEKTURACH
+
+W architekturze x86 przyjeto, ze wszystkie elementy stosu przechowywane sa w
+jednej pamieci glownej (operacyjnej).
+
+W innych architekturach spotyka sie rozwiazania, w ktorych wierzcholek stosu
+wraz z kilkoma elementami przylegajacymi umieszczony jest w zarezerwowanych
+rejestrach procesora - przespiesza to znacznie odczyt danych ze stosu. 
+
+Niekiedy tworzeone sa dwa stosy, z ktorych jeden przechowuje dane, a drugi 
+adresy (np. slad tworzony w chwili wywolania podprogramu). 
+
+Czasami wystepuje odrebny modul pamieci wylacznie dla stosu. 
+
+Podprogramy, w innych jezykach programowania nazywane takze procedurami lub
+funkcjami, stanowia wygodny sposob kodowania wielokrotnie powtarzajacych sie 
+fragmentow programu.
+
+Na poziomie rozkazow procesora wywolanie podprogramu polega na wykonaniu skoku
+bezwarunkowego, przy czym dodatkowo zapamietuje sie slad, czyli polozenie
+w pamieci kolejnego rozkazu, ktoryu powinien zostac wykonany po zakonczeniu 
+podprogramu. 
+
+ROZKAZY CALL I RET
+
+W procesorach zgodnych z architektura x86 adres powrotu zapisuje sie na stosie. 
+
+Spotyka sie inne typy procesorow (zwlaszcza klasy RISC), w ktorych slad
+zapisywany jest w rejestrach. 
+
+W procesorach x86 wywolanie podprogramu realizuje rozkaz CALL stanowiacy 
+polaczenie skoku bezwarunkowego z operacja zapamietania sladu na stosie. 
+
+Na koncu podprogramu umieszcza sie rozkaz RET, ktory przekazuje sterowanie 
+do programu glownego.
+
+W ujeciu technicznym rozkaz RET odczytuje liczbe z wiercholka stosu i wpisuje
+ja do wskaznika instrukcji EIP. 
+
+Podobnie jak w przypadku skokow bezwarunkowch, dostepne sa dwie odmiany rozkazu
+CALL:
+
+- wykonujacy skok do podprogramu bezposredni
+- wykonujacy skok do podprogramu posredni
+
+Rozkaz CALL typu posredniego uzywany jest m.in. przez kompilatory jezyka C do 
+implementacji wywolywania funkcji przez wskaznik. 
+
+PRZYKLAD PODPROGRAMU W ASEMBLERZE
+
+Podany podprogram "kwadrat" oblicza wartosc wyrazenia:
+    y = x^(2) + 1
+gdzie x jest liczba calkowita bez znaku.
+Zakladamy, ze wartosc x zostala wpisana do rejestru ESI przed rozpoczeciem
+wykonywania podprogramu, a wynik obliczenia dostepny bedzie w rejestrze EDI. 
+Przyjmujemy tez, ze obliczona wartosc y da sie przedstawic w postaci liczby
+32-bitowej bez znaku (w trakcie obliczen nie wystapi nadmiar).
+
+kwadrat PROC
+
+    MOV     EAX,    ESI     ;
+    MULL    ESI             ;
+    MOV     EDI,    EAX     ; bierzemy tylko mlodsza czesc iloczyny
+    ADD     EDI,    1       ; dodawanie 1 do wyniku mnozenia
+    RET
+
+kwadrat ENDP
+
+Przykladowe wywolanie podprogramu 
+    MOV     ESI,    7
+    CALL    kwadrat
+
+KODOWANIE LICZB CALKOWITYCH
+
+W wielu wspolczesnych procesorach, w tym tych zgodnych z architektura x86,
+wyroznia sie:
+
+- liczby calkowite bez znaku, kodowane w naturalnym kodzie binarnym
+- liczby calkowite ze znakiem kodowane w kodzie U2
+- liczby calkowite ze znakiem kodowanie w kodzie znak - modul
+
+KODOWANIE W SYSTEMIE ZNAK - MODUL
+
+W tym systemie kodowania skrajny lewy bit okresla znak liczby, a pozostale bity
+okreslaja wartosc bezgledna liczby (modul).
+
+Ten rodzaj kodowania stosowany jest nadal w arytmetyce zmiennoprzecinkowej.
+
+W operacjach staloprzecinkowych kodowanie w systemie znak-modul jest rzadko
+stosowane. 
+
+Wartosc liczby binarnje kodowanej w systemie znak-modul okresla ponizsze 
+wyrazenie (gdzie x(i) oznacza wartosc i-tego bity liczby, m oznacza liczbe bitow
+rejestru lub komorki pamieci, zas s stanowi wartosc bitu znaku)
+
+w = (-1)^s * SIGMA(od (i = 0) do (m - 2)) ( x(i) * 2^(i)
+
+KODOWANIE W SYSTEMIE U2
+
+Kodowanie liczb w systemie U2 jest obecnie powszechnie stosowane w wielu 
+systemach komputerowych. 
+
+Taki rodzaj kodowania upraszcza i przyspiesza wykonywanie operacji 
+arytmentycznych przez procesor. 
+
+Zakresy liczb kodowanych w systemie U2:
+
+liczby 8-bitowe <-128, +127>
+liczby 16-bitowe <-32768, +32767>
+liczby 32-bitowe <-2^(31), 2^(31)-1>
+liczby 64-bitowe <-2^(63), 2^63)-1>
+
+Najbardziej znaczacy bit tej liczby to bit znaku.
+
+IMPLEMENTACJA STRUKTUR DECYZYJNYCH
+
+Prawie wszystkie algorytmu realizowane w komputerach zawieraja struktury
+decyzyjne, ktore okreslaja sposob dalszego wykonywania programu w zaleznosci
+od wartosci uzyskanych wynikow posrednich - struktury te maja postac rozwidlen
+i petli. 
+
+W tego rodzaju strukturach podstawowych znaczenia maja operacje porownania - 
+trzeba zbadac ktora z dwoch wartosci jest wieksza albo czy wartosci sa rowne.
+
+W jezykach wysokiego poziomu struktury decyzyjne realizowane sa za pomoca
+istrukcji if ... then .. else.
+
+Z kolei petle realizowane sa za pomoca instrukcji while, for, repeat ... until.
+
+W architekturze x86 do porownania uzywa sie dwoch kolejnych rozkazow: pierwszy
+z nich wykonuje odejmowanie obu porownywanych wartosci, drugi jest rozkazem 
+skoku, ktore testuje wlasnosci wyniku odejmowania i ewentualnie przekazuje
+sterowanie ("skacze") do innego fragmentu programu. 
+
+Zatem w zaleznosci od wyniku porowniania rozkazy programu moga byc wykonywane 
+dalej w porzadku naturalnym, albo procesor moze ominac pewna liczbe rozkazow i 
+przejsc (przeskoczyc) do wykonywania rozkazow znajdujacych sie w odleglym 
+miejscu pamieci. 
+
+POROWNYWANIE ZAWARTOSCI REJESTROW I KOMOREK PAMIECI
+
+W architekturze x86 operacje porownywania realizowane sa poprzez odejmowanie 
+porownywanych wartosci i testowanie zawartosci znacznikow: CF, ZF, OF, SF. 
+
+W operacjach porownywania liczb bez znaku istotne znaczenia maja znaczniki 
+CF i ZF.
+
+CF - znacznik przeniesienia, ustawiany w stan 1 w przypadku wystapienia 
+     przeniesienia (przy dodawaniu) lub pozyczki (przy odejmowaniu)
+
+ZF - znacznik zera, ustawiany w stan 1, jesli wynik operacji arytmentycznej lub
+     logicznej jest rowny 0 - w przeciwnym razie znacznik ustawiany jest w 
+     stan 0
+
+Procesor wykonal odejmowanie dwoch liczb bez znaku znajdujacych sie w rejestrach
+EBX i ECX (rozkaz SUB EBX,ECX) - jakie wartosci zostana wpisane do znacznikow
+CF i ZF?
+
+1. EBX > ECX    ZF = 0, CF = 0
+2. EBX = ECX    ZF = 1, CF = 0
+3. EBX < ECX    ZF = 0, CF = 1
+
+Na podstawie stanu znacznikow ZF i CF mozna okreslic, ktora z powownywanych
+liczb jest wieksza, albo czy liczby sa rowne. 
+
+ROZKAZY SUB I CMP
+
+Zamiast rozkazu SUB uzywa sie zazwyczaj rozkazu CMP, ktory rowniez wykonuje 
+odejmowanie, ustawia znaczniki, ale nigdzie nie wpisuje wyniku odejmowania - 
+ulatwia to kodowanie programu, poniewaz po wykonaniu rozkazu CMP oba operandy
+pozostaja niezmienione (rozkaz SUB wpisuje do pierwszego operandu wynik
+odejmowania). 
+
+POROWNANIE LICZB ZE ZNAKIEM I BEZ ZNAKU
+ 
+Do testowania stanu znacznikow uzywa sie omawianych wczesniej rozkazow 
+sterujacych (skokow) warunkowych (np. JA, JNZ, ...), przy czym do porownania
+liczb ze znakiem (w kodzie U2) i liczb bez znaku stosuje sie odrebne grupy 
+rozkazow sterujacych.
+
+Mnemonmiki omawianych rozkazow zaczynaja sie od litery J (ang. jump), a 
+kolejne litery moga byc nastepujace:
+
+    W rozkazach uzywanych przy porownywaniu liczb ze znakiem (w kodzie U2) i 
+    liczb bez znaku 
+    - E = equal (rowny)
+    - N = not   (nie)
+
+    W rozkazach uzywanych przy porownywaniu liczb bez znaku
+    - A = above (powyzej)
+    - B = below (ponizej)
+
+    W rozkazach uzywanych przy porownywaniu liczb ze znakiem (w kodzie U2)
+    - G = greater   (wiekszy)
+    - L = less      (mniejszy)
+
+
+ROZKAZY UZYWANE DO POROWNANIA LICZB ZE ZNAKIEM (W KODZIE U2)
+
+JG                  skocz, gdy wiekszy                          
+JLNE                skocz, gdy niemniejszy i nierowny       ZF = 0 and SF = OF
+
+JGE                 skocz, gdy wiekszy lub rowny            
+JNL                 skocz, gdy niemniejszy                  ZF = OF
+
+JL                  skocz, gdy mniejszy
+JNGE                skocz, gdy niewiekszy i nierowny        ZF != OF
+
+JLE                 skocz, gdy mniejszy lub rowny
+JNG                 skocz, gdy niewiekszy                   ZF = 1 or SF != OF
+
+JO                  skocz, gdy wystapil nadmiar             OF = 1
+
+JNO                 skocz, gdy nie wystapil nadmiar         OF = 0
+
+ROZKAZY UZYWANE DO POROWANIA LICZ BEZ ZNAKU I ZE ZNAKIEM (W KODZIE U2)
+
+JE                  skocz, gdy rowny                
+JZ                  skocz, gdy wynik = 0                    ZF = 1
+
+JNE                 skocz, gdy nierowny 
+JNZ                 skocz, gdy wynik != 0                   ZF = 0
+
+INNE ROZKAZY UZYWANE DO TESTOWANIA STANU ZNACZNIKOW
+
+JP  JPE             skocz, gdy liczba bitow parzysta        PF = 1
+JNP JPO             skocz, gdy liczba bitow nieparzysta     PF = 0
+
+JS                  skocz, gdy wynik ujemny                 SF = 1
+JNS                 skocz, gdy wynik nieujemny              SF = 0
+
+Przyklad: wyszukiwanie liczby najwiekszej w tablicy liczb (bez znaku)
+
+; adres pierwszego elementu tablicy zostal 
+; wczesniej wpisany do rejestru EBX
+; liczba elementow tablicy zostala wczesniej 
+; wpisana do rejestru ECX
+
+    DEC     ECX                 ; ECX <- ECX - 1
+    MOV     EAX,    [EBX]       
+ptla:
+    ADD     EBX,    4           ; EBX <- EBX + 4
+    CMP     EAX,    [EBX]
+    JAE     skocz               ; skocz gdy > lub =
+    MOV     EAX,    [EBX]
+
+skocz:  
+    SUB     ECX,    1           ; ECX <- ECX - 1
+    JNZ     ptla                ; skoczy gdy ECX != 0
+
+ROZKAZY WYZNACZANIA WARTOSCI LOGICZNYCH
+
+Podane wczesniej typy rozkazow sterujacy warunkowych pozwalaja na zmiane
+porzadku wykonywania rozkazow  programu w zaleznosci od wyniku porownania.
+
+Czasami jednak przed wykonaniem skoku trzeba wykonac dodatkowe operacje - w 
+takich przypadkach, za pomoca wybranego rozkazu z grupy SET... mozna zapisac 
+wynik porownania w rejestrze 8-bitowym lub zmiennej. 
+
+Rozkazy grupy SET... moga byz tez stosowane do kodowania programow, w ktorych 
+nie uzywa sie rozkazow skoku (rozkazy skoku zmniejszaja wydajnosc procesora).
+
+Sekwencje rozkazow podane w lewej i w prawej kolumnie sa funkcjonalnie 
+rownowazne
+
+    CMP     ECX,        EDX         |   CMP     ECX,    EDX
+    MOV     AL,         1           |   SETAE   AL
+    JAE     zgadza_sie              |
+    DEC     AL                      |
+    zgadza_sie:                     |
+
+TWORZENIE KODU WYKONYWALNEGO PROGRAMU
+
+Przeksztacenie kodu zrodlowego a asemblerze na ciagi zero-jedynkowe zrozumiale
+przez procesor realizowane jest w kilku etapach:
+
+1.  asemblacja polega na przksztaceniu wierszy zrodlowych programu na ciagi
+    zerojedynkowe, jednak z pozostawieniem pewnej elastycznosci 
+    umozliwiajacej pozniejsze dolaczenie podprogramow bibliotecznych i
+    innych modulow programowych; kod wygenerowany przez asembler jest 
+    okreslany jako kod w jezyku posrednim (w systemie Windows jest zapisywany
+    w pliku z rozszerzeniem .OBJ)
+
+2.  konsolidacja (lub linkowanie) polega na scalaniu roznych modulow programu,
+    w tym kodu wytworzonego podczas asemblacji i podprogramow bibliotecznych
+    do postaci pojedynczego programu, ktory zostaje zapisany w pliku (w 
+    systemie Windows z rozszerzeniem .EXE)
+
+3.  ladowanie stanowi ostatnia faze translacji programu: system operacyjny
+    wspisuje program do pamieci glownej (operacyjnej) i dokonuje niewielkich
+    zmian kodu w celu dostosowania programu do aktualnego polozenia w pamieci.
+
+
+Odpowiednikiem asemblacji w przypadku jezykow wysokiego poziomu jest kompilacja 
+- kompilatory uzywane w systemie Windows generuja rowniez kod w jezyku posrednim
+(plik .OBJ).
+
+ASEMBLACJA PROGRAMOW
+
+Asemblacja realizowana jest dwuprzebiegowo: w kazdym przebiegu czytany jest
+caly plik zrodlowy (scisle: modul) od poczatku do konca.
+
+W pierwszym przebiegu asembler stara sie wyznaczyc ilosci bajtow zajmowane przez
+poszczegolne rozkazy i dane: jednoczesnie asembler rejestruje w slowniku 
+symboli wszystkie pojawiajace sie definicje symboli (zmiennych i etykiet). 
+
+W drugim przebiegu asembler tworzy kompletna wersje tlumaczonego programu 
+okreslajac adresy wszystkich rozkazow w oparciu o informacje zawarte w slowniku
+symboli.
+
+W procesie asemblacji programow istotna role odgrywa rejestr programowy (tj. 
+definiowany przez asembler), zwany licznikiem lokacji. 
+
+Licznik lokacji okresla adres komorki pamieci operacyjnej, do ktorej zostanie 
+przeslany aktualnie tlumaczony rozkaz lub dana. 
+
+Po zaladowaniu rozkazu lub danej, licznik lokacji zostazje zwiekszony o ilosc
+bajtow zajmowanych przez ten rozkaz lub dana. 
+
+Przed rozpoczeciem tlumaczenia pierwszego wiersza licznik lokacji zawiera 0.
+
+Jezeli asembler napotka wiersz zawierajacy definicje symbolu, to rejestruje temu
+sombolowi wartosc rowna aktualnej zawartosci licznika lokacji; ponadto
+zapisywane sa takze atrybuty symbolu, jak np. byte, word, itp;
+
+PRZYKLAD ASEMBLACJI FRAGMENTU PROGRAMU
+    gamma   DW      ?
+    beta    DB      ?
+    alfa    DD      73467H, 885678H, 789H
+            DD      0A15FF3H, 89ABH
+    
+    MOV     EBX,    12
+    SUB     EAX,    alfa            ; odjecie liczby 734567H od EAX
+    MOV     EDX,    alfa + 4        ; wpisanie liczby 885678H do EDX
+    ADD     ESI,    alfa [EBX] + 4  ; dodanie liczby 89ABH do ESI
+
+Po wczytaniu segmentu danych (w ktorym zdefiniowano zmienne: gamma, beta, alfa)
+slownik symboli zaweira nastepujace pozycje:
+
+    alfa    Dword   0003    _DATA
+    beta    Byte    0002    _DATA
+    gamma   Word    0000    _DATA
+
+Tlumaczenie rozkazu MOV EBX, 12 nie wymaga zagladania do slownika symboli -
+wystarczy tylko zmienic mnemonik MOV na odpowiedni kod binarny, nastepnie 
+okreslic kod binarny rejestru EBX oraz liczbe 12 przedstawic w postaci 
+32-bitowej liczby binarnej, co prowadzi do podanego nizej rozkazu 5-bajtowego
+
+MOV EBX, 12
+BB 0C 00 00 00
+
+Tlumaczenie na postac binarna nastepnych rozkazow jest bardziej skomplikowane:
+w celu wyznaczenia pola adresowego asembler musi kazdorazowo odszukac w slowniku
+symboli wartosc przypisana nazwie alfa - wartosc licznika lokacji dla obszaru 
+danych w chwili wystapienia definicji zmiennej alfa wynosila 3, zatem wartosc
+przypisana nazwie alfa wynosi 3.
+
+W rezulatacie asemblacja rozkazu "SUB EAX, alfa" prowadzi do uzyskania nizej
+pokazanego kodu 6-bajtowego. 
+
+Nalezy zwrocic uwage, ze liczba 3 nie jest tu wartoscia zmiennej alfa, lecz jej
+adresem wzgledem poczatku obszaru danych. 
+
+SUB EAX, alfa
+2B 05 03 00 00 00
+
+Dwa nastepne rozkazy zostana przetlumaczone na ponizsza postac binarna.
+
+Zauwazmy, ze oba rozkazy maja identyczne pole adresowe (cztery ostatnie bajty).
+
+MOV EDX, alfa + 4
+8B 15 07 00 00 00
+
+ADD ESI, alfa [EBX] + 4
+03 B3 07 00 00 00
+
+
+OPERACJE NA LICZNIKU LOKACJI
+
+Licznikiem lokacji mozna sie takze poslugiwac w programie zrodlowym - aktualna
+zawartosc licznika lokacji jest reprezentawana przez symbol $.
+
+Symbol $ moze stanowic operand w wyrazeniach jezyka asmebler, reprezentujacy
+biezaca lokacje wewnatrz tlumaczonego kodu. 
+
+Przyklad: podany nizej dwubajtowy rozkaz JMP powoduje przejscie do nastepnego 
+          rozkazu. Obok podano postac rozkazu po asemblacji. 
+
+    JMP $+2 (kod maszynowy EBH 00H)
+
+Czasami tego rodzaju rozkazy umieszcza sie w programie w celu wprowadzenia
+dodatkowego opoznienia.
+
+Przyklad:   wykorzystujac symbol $ mozna latwo wyznaczyc liczbe znakow lancucha,
+            np.:
+
+    blad_par    DB  'Podano bledne parametry'
+    rozmiar = $ - blad_par
+
+    MOV     ECX,    rozmiar
+
+Wartosc wyrazenia $ - blad_par obliczana jest w trakcie dzialania asemblacji 
+programu, a nie w czasie jego wykonywania (co jest charakterystyczne dla jezykow
+wysokiego poziomu) - z tego powodu wyrazenia tego rodzaju nazywane sa wyrazeniami
+arytmetycznymi czasu translacji.  
+
+Takze zmienna rozmiar jest zmienna czasu translacji, co oznacza, ze dla zmiennej 
+tej nie jest rezerwowany zadem obszar w programie wynikowym. 
+
+Innymi slowy zmienna rozmiar funkcjonuje jedynie w czasie translacji (asemblacji)
+programu. 
+
+Zauwazmy, ze w trakcie asemblacji intrukcji MOV zmienna czasu translacji rozmiar
+traktowana jest jako liczba, a nie jako nazwa zmiennej (zdefiniowanej za 
+pomoca dyrektywy DW). 
+
+DYREKTYWA ORG
+
+Dyrektywa ORG umozliwia wpisanie do licznika lokacji potrzebnej wartosci, np. 
+ORG 100H
+
+W polu operandu dyrektyw ORG mozna podac wyrazenie arytmetyczne czasu translacji,
+np. dyrektywa "ORG $+7" powoduje zwiekszenie aktualnej zawartosci licznika
+lokacji o 7. 
+
+SPRAWOZDANIE Z PRZEBIEGU TRANSLACJI PROGRAMU
+
+W trakcie asemblacji tworzony jest plik z rozszerzeniem .LST zawierajacy obszerne
+sprawozdanie z jej przebiegu (tzw. listing asemblacji). 
+
+Analogicznie w trakcie konsolidacji tworzony jest plik z rozszerzeniem .MAP.
+
+W pliku .LST podawane sa kolejne wiersze programu zrodlowego oraz wygenerowany 
+na ich podstawie kod polskompilowany (ang. object code);
+podane sa takze nazwy i wartosci wszystkich etykiet, zmiennych i symboli 
+stosowanych w programie zrodlowym; sygnalizowane sa tez ewentualne bledy. 
+
+Ponize podano przykladowy fragment tego pliku obejmujacy trzy rozkazy programu. 
+
+000000A6    8A 03   nowy:   MOV AL, [EBX]
+000000A8    43              INC EBX
+000000A9    3C 0A           CMP AL, 10
+
+W koncowej czesci sprawozdania podany jest slownik symboli uzywanych w programie.
+
+KOD ASEMBLEROWY W WERSJI AT&T
+
+Omawiany wczesniej asembler zostal zaprojektowany przez firme Intel dla
+wytwarzanych przez nia procesorow. 
+
+Dostepne sa takze asemblery uzywajace innych skladni jezyka, sposrod ktorych 
+najbardziej znana jest skladnia AT&T stosowana w Linuxie. 
+
+Zasadnicze roznice miedzy tymi asemblerami sa nastepujace:
+-   nazwy rejestrow poprzedzone sa znakiem %
+-   przeslania zapisywane sa w postaci skad, dokad
+-   prawie kazdy rozkaz posiada jawnie zdefiniowany rozmiar operandow, 
+    okreslony przez ostatnia litere instrukcji, np:
+
+        MOVL    (%EBX), %EAX                (AT&T)
+        MOV     EAX,    dword ptr [EBX]     (Intel)
+
+-   wartosci bezposrednie sa poprzedzone znakiem $, np. 
+        
+        MOVL    $1,     %EBX    (AT&T)
+        MOV     EBX,    1       (Intel)
+
+-   liczby w zapisie szesnastkowym poprzedzone sa znakami 0x (tak jak w C)
+-   segmentu programu sa deklarowane poprzez nazwy, np. .text, .bss
+-   czesc rozkazow procesora posiada odmienne mnemoniki, 
+    np. CBW (Intel) -> CBTW (AT&T)
+-   komentarze poprzedzone sa znakiem #
+-   wyrazena indeksowe stosuja dosc specyficzna notacje 
+        
+        (AT&T)                          (Intel)
+        
+        MOVL ($EBX), %EAX               MOV EAX, [EBX]
+        MOVL 3(%EBX), %EAX              MOV EAX, [EBX+3]
+        MOV (%EBX, %ECX)                MOV EAX, [EBX + ECX]
+        MOV (%EBX, %ECX, 2), %EAX       MOV EAX, [EBX + ECX * 2]
+
+        

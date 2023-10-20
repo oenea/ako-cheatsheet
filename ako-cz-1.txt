@@ -1,0 +1,148 @@
+Architektura komputerow jest projektem warstw abstrakcji.
+
+aplikacja
+algorytm 
+jezyk programowania
+system operacyjny/maszyny wirtualne
+model programowy procesora (ISA)
+mikroarchitektura
+rejestry
+obwody 
+urzadzenia/tranzystory
+warstwa fizyczna
+
+Architektura systemu opisywana jest przez zestaw atrybutow (interfejsow).
+Sa one definiowane z puktu widzenia programisty i maja bezprosredni wplyw na
+logiczne wykonanie  programu.
+
+Zbior tych atrybutow okresla sie jako model programowy procesora - ISA 
+(Instruction Set Archtecture).
+
+Procesory posiadajace ten sam model programowy sa ze soba kompatybilne, co 
+oznacza, ze moga wykonywac te same programy i generowac te same rezultaty.
+
+Procesory moga posiadac identyczne atrybuty (identyczny model programowy), 
+ale moga byc zbudowane w odmienny sposob (maja inna organizacje).
+
+Atrybuty archtektury procesora 
+- Klasy ISA (register - mem, load - store)
+- Dostepne rejestry 
+- Typy i rozmiar operandow
+- Dostepne operacje (zbiory instrukcji)
+- Sposob wyrownania adresow (alignment)
+- Tryby adresowania (reg, imm, disp)
+- Wykorzystane instrukcje sterowania przeplywem
+- Sposob kodowania instrukcji (fixed, var)
+
+rejestry ogolnego przeznaczenia
+RAX EAX
+RBX EBX
+RCX ECX
+RDX EDX
+RBP EBP
+RSI ESI
+RDI EDI
+RSP ESP
+R8
+R9
+R10
+R11
+R12
+R13
+R14
+R15
+Bit#    Abbreviation    Description             Category    =1      =0
+0       CF              Carry flag              Status      CY      NC
+1       -               Reserved                -
+2       PF              Parity flag             Status      PE      PO
+3       -               Reserved                -    
+4       AF              Auxiliary Carry flag    Status      AC      NA
+5       -               Reserved                -
+6       ZF              Zero flag               Status      ZR      NZ
+7       SF              Sign flag               Status      NG      PL
+8       TF              Trap flag               Control
+9       IF              Interrupt enable flag   Control     EI      DI
+10      DF              Direction flag          Control     DN      UP
+11      OF              Overflow flag           Status      OV      NV
+12-13   IOPL            I/O privilege level     System  
+14      NT              Nested task flag        System
+15      MD              Mode flag, reserved 0   Control
+
+EFLAGS
+
+16      RF              Resume flag                     System
+17      VM              Virtual 8086 mode               System
+18      AC              Alignment Check                 System
+19      VIF             Virtual interrupt flag          System
+20      VIP             Virtual interrupt pending       System
+21      ID              Able to use CPUID instruction   System
+22-29   -               Reserved                        System
+30      (none)          AES key schedule loaded flag    System
+31      AI              (VIA C5XL processors only)      System               
+32-63   -               Reserved                        -
+
+little endian (mniejsze nizej) - 
+mlodsza czesc liczby zajmuje bajty o nizszych adresach
+
+big endian (mniejsze wyzej) - 
+mlodsza czesc liczby zajmuje bajty o wyzszych adresach
+
+BSWAP - rozkaz zamieniajacy liczbe 32bit lub 64bit w z little endian na big endian
+        i odwrotnie
+
+XCHG  - rozkaz zamieniajacy oba operandy podane jako dwa argumenty
+
+kody rozszerzonych ASCII
+- Windows 1250 (Microsoft CP 1250)
+- ISO 8859-2
+- Latin 2
+- Mazovia
+
+Unicode 
+- UCS - Universal Character Set (ISO 10646)
+- Unicode (konsorcjum producentow)
+
+roznice - znaki obu standardow sa identyczne, ale obie instytucje wydaja 
+          odrebne dokumenty, a takze wystepuja inne drobne roznice
+
+W standardzie Unicode udostepniono 1114112 punktow kodowych w przedziale
+0 - 1114111, te punkty tworza "przestrzen kodowa" Unicode.
+
+W wersji 15.1 standardu opublikowanej we wrzesniu 2023 r. zdefiniowano 
+149186 znakow.
+
+Kody o wartosciach nieprzekraczajacych 65535 (0 - 65535) oznacza sie skrotem
+BMP (Basic Multilingual Plane)
+
+W przypadku UTF-8 znaki Unicode o wartosciach punktow kodowych 0000 - 007F i
+sa kodowane jako pojedyncze bajty. Wszystkie o wartosciach wiekszych sa
+kodowane jako sekwencja kilku bajtow, z ktorych kazdy ma najstarszy bit
+ustawiony na 1. Pierwszy bajt w sekwencji kilku bajtow jest zawsze liczba z 
+przedzialu C0 do FD i okresla ile bajtow wystepuje po nim. Wszystkie pozostale
+bajty zawieraja liczby z przedzialu 80 do BF.  
+
+Zakresy             liczba              reprezentacja w postaci UTF-8
+wartosci            kodowanych      
+                    bitow
+0000 - 007F         7       0xxx xxxx
+0080 - 07FF         11      110x xxxx   10xx xxxx
+0800 - FFFF         16      1110 xxxx   10xx xxxx   10xx xxxx
+10000 - 1FFFFF      21      1111 0xxx   10xx xxxx   10xx xxxx   10xx xxxx
+
+UTF-16
+
+Dla znakow z przedzialu od 10000H do 10FFFFH (nie nalezacych do BMP)
+stosuje sie dwa slowa 16-bitowe. Wartosc z przedzialu od 10000H do 10FFFFH
+zostaje najpierw pomniejszona o 10000H.
+W rezultacje powstaje wartosc 20-bitowa, z ktorej 10 najstarszych bitow
+wpisywana jest do pierwszego slowa, a pozostale 10 bitow do drugiego slowa.
+1101 10xx xxxx xxxx | 1101 11xx xxxx xxx
+
+W celu uzyskania kodu UTF-16 odejmujemy najpierw liczbe 10000 
+(liczby w zapisie szesnastkowym i dwojkowym).
+Aby uniknac niejednoznacznosci, w w Unicode nie przypisano zadnemu znakowi 
+kodu zaczynajacego sie od 1101 1, zatem wartosci z przedzialu <D800H, DFFFH>
+nie sa przypisane zadne znaki. 
+
+
+
